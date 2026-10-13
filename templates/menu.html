@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>{{ restaurant_name }} — Digital Menu & Allergens</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Playfair Display"', 'serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              200: '#fed7aa',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c',
+              900: '#7c2d12',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .tap-highlight-transparent {
+      -webkit-tap-highlight-color: transparent;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Mobile Sticky Top App Bar -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs">
+    <div class="max-w-3xl mx-auto px-4 py-3">
+      
+      <!-- Top Row: Branding & Language Switcher -->
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex-1 min-w-0">
+          <span class="inline-block px-2 py-0.5 rounded-md bg-brand-50 border border-brand-200 text-brand-700 text-[10px] font-bold uppercase tracking-wider mb-0.5">
+            {{ cuisine_type }} Cuisine
+          </span>
+          <h1 class="text-lg sm:text-xl font-extrabold text-slate-900 truncate font-serif">
+            {{ restaurant_name }}
+          </h1>
+        </div>
+
+        <!-- Language Selector Dropdown -->
+        <div class="shrink-0 flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <i data-lucide="globe" class="w-4 h-4 text-slate-500 ml-1.5"></i>
+          <select id="languageSelect" onchange="changeLanguage(this.value)" class="text-xs font-bold text-slate-800 bg-transparent pr-2 py-1 focus:outline-none cursor-pointer">
+            <option value="Original">Original (EN)</option>
+            {% for lang in target_languages %}
+              <option value="{{ lang }}">{{ language_names_map.get(lang, lang) }} ({{ lang }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- Search & Dietary Bar -->
+      <div class="mt-3">
+        <div class="relative">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+          <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Search dishes, ingredients, or spices..."
+                 class="w-full text-xs pl-9 pr-8 py-2 bg-slate-100/80 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none transition">
+          <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-2.5 top-2 text-slate-400 hover:text-slate-600">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Allergen Filter Toggles (Horizontal Scrollable) -->
+      <div class="mt-2.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 tap-highlight-transparent">
+        <button onclick="toggleAllergenFilter('ALL')" id="filterBtn_ALL" class="allergen-pill px-3 py-1 rounded-full text-xs font-bold bg-slate-900 text-white shrink-0 shadow-xs transition">
+          All Dishes
+        </button>
+        <button onclick="toggleAllergenFilter('GF')" id="filterBtn_GF" class="allergen-pill px-3 py-1 rounded-full text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:border-amber-400 shrink-0 transition flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+          <span>Gluten-Free</span>
+        </button>
+        <button onclick="toggleAllergenFilter('NF')" id="filterBtn_NF" class="allergen-pill px-3 py-1 rounded-full text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:border-purple-400 shrink-0 transition flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+          <span>Nut-Free</span>
+        </button>
+        <button onclick="toggleAllergenFilter('DF')" id="filterBtn_DF" class="allergen-pill px-3 py-1 rounded-full text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:border-blue-400 shrink-0 transition flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+          <span>Dairy-Free</span>
+        </button>
+        <button onclick="toggleAllergenFilter('VG')" id="filterBtn_VG" class="allergen-pill px-3 py-1 rounded-full text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:border-emerald-400 shrink-0 transition flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span>Vegan</span>
+        </button>
+        <button onclick="toggleAllergenFilter('V')" id="filterBtn_V" class="allergen-pill px-3 py-1 rounded-full text-xs font-bold bg-white text-slate-600 border border-slate-200 hover:border-lime-400 shrink-0 transition flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-lime-500"></span>
+          <span>Vegetarian</span>
+        </button>
+      </div>
+
+      <!-- Quick Category Jump Tabs -->
+      <nav id="categoryNav" class="mt-2.5 pt-2 border-t border-slate-100 flex gap-2 overflow-x-auto no-scrollbar text-xs font-bold">
+        <!-- Rendered dynamically -->
+      </nav>
+
+    </div>
+  </header>
+
+  <!-- Main Menu Items Container -->
+  <main class="flex-1 max-w-3xl mx-auto px-4 py-6 w-full space-y-8">
+    
+    <!-- Allergen Active Notice Banner -->
+    <div id="filterNotice" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i data-lucide="filter" class="w-4 h-4 text-amber-600 shrink-0"></i>
+        <span>Filtering by: <strong id="filterNoticeText">Gluten-Free</strong></span>
+      </div>
+      <button onclick="toggleAllergenFilter('ALL')" class="text-xs font-bold text-amber-800 underline">Reset</button>
+    </div>
+
+    <!-- Menu Categories & Items List -->
+    <div id="menuContent" class="space-y-8">
+      <!-- Dynamic populated categories -->
+    </div>
+
+    <!-- Empty Search State -->
+    <div id="noResultsState" class="hidden py-16 text-center">
+      <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="search-x" class="w-6 h-6"></i>
+      </div>
+      <h3 class="text-sm font-bold text-slate-800">No dishes match your filters</h3>
+      <p class="text-xs text-slate-500 mt-1">Try clearing your search query or selected allergen filters.</p>
+      <button onclick="clearAllFilters()" class="mt-4 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl shadow-xs">
+        Clear All Filters
+      </button>
+    </div>
+
+    <!-- Restaurant Allergen & Kitchen Policy Card -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-5 text-xs text-slate-500 space-y-2">
+      <div class="flex items-center gap-2 text-slate-900 font-bold">
+        <i data-lucide="alert-circle" class="w-4 h-4 text-brand-600"></i>
+        <span>Allergen & Cross-Contamination Notice</span>
+      </div>
+      <p class="leading-relaxed">
+        Our menu badges (<strong class="text-amber-700">GF</strong>: Gluten-Free, <strong class="text-purple-700">NF</strong>: Nut-Free, <strong class="text-blue-700">DF</strong>: Dairy-Free, <strong class="text-emerald-700">VG</strong>: Vegan, <strong class="text-lime-700">V</strong>: Vegetarian) are automatically inferred by AI from ingredient and culinary preparation records. Please alert your server if you have severe or anaphylactic food allergies.
+      </p>
+    </div>
+
+  </main>
+
+  <!-- Sticky Bottom Quick Share & Table Info Bar -->
+  <footer class="bg-white border-t border-slate-200 py-4 px-4 text-center">
+    <div class="max-w-3xl mx-auto flex items-center justify-between text-xs text-slate-500">
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span class="font-medium">Live QR Menu</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="shareMenu()" class="flex items-center gap-1 text-brand-600 font-bold hover:text-brand-700">
+          <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+          <span>Share Table</span>
+        </button>
+        {% if qr_code_base64 %}
+          <button onclick="showQrModal()" class="flex items-center gap-1 text-slate-700 font-bold hover:text-slate-900">
+            <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+            <span>Show QR</span>
+          </button>
+        {% endif %}
+      </div>
+    </div>
+  </footer>
+
+  <!-- Customer QR Modal for Table Sharing -->
+  {% if qr_code_base64 %}
+  <div id="customerQrModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-xs w-full p-6 text-center relative shadow-2xl">
+      <button onclick="closeQrModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+      <h3 class="text-base font-bold text-slate-900">{{ restaurant_name }}</h3>
+      <p class="text-[11px] text-slate-500 mt-0.5">Scan to open digital menu on mobile</p>
+      <div class="my-4 p-3 bg-slate-50 rounded-2xl border border-slate-200">
+        <img src="{{ qr_code_base64 }}" alt="QR Code" class="w-44 h-44 mx-auto rounded-xl">
+      </div>
+      <button onclick="closeQrModal()" class="w-full py-2 bg-slate-900 text-white rounded-xl text-xs font-bold">
+        Close
+      </button>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Embedded JSON Data from Server -->
+  <script id="serverMenuData" type="application/json">
+    {{ menu_data | tojson | safe }}
+  </script>
+
+  <script>
+    // Embedded Data and State
+    const RAW_MENU_DATA = JSON.parse(document.getElementById("serverMenuData").textContent);
+    let currentSelectedLanguage = "Original";
+    let activeAllergenFilter = "ALL"; // 'ALL', 'GF', 'NF', 'DF', 'VG', 'V'
+    let searchQuery = "";
+
+    const ALLERGEN_MAP = {
+      'GF': { label: 'Gluten-Free', badgeClass: 'bg-amber-100 text-amber-800 border-amber-300' },
+      'NF': { label: 'Nut-Free', badgeClass: 'bg-purple-100 text-purple-800 border-purple-300' },
+      'DF': { label: 'Dairy-Free', badgeClass: 'bg-blue-100 text-blue-800 border-blue-300' },
+      'VG': { label: 'Vegan', badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+      'V':  { label: 'Vegetarian', badgeClass: 'bg-lime-100 text-lime-800 border-lime-300' }
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      renderMenu();
+    });
+
+    function changeLanguage(lang) {
+      currentSelectedLanguage = lang;
+      renderMenu();
+    }
+
+    function toggleAllergenFilter(filterKey) {
+      activeAllergenFilter = filterKey;
+
+      // Update button styling
+      document.querySelectorAll(".allergen-pill").forEach(btn => {
+        btn.classList.remove("bg-slate-900", "text-white");
+        btn.classList.add("bg-white", "text-slate-600");
+      });
+
+      const activeBtn = document.getElementById(`filterBtn_${filterKey}`);
+      if (activeBtn) {
+        activeBtn.classList.remove("bg-white", "text-slate-600");
+        activeBtn.classList.add("bg-slate-900", "text-white");
+      }
+
+      // Banner visibility
+      const notice = document.getElementById("filterNotice");
+      if (filterKey !== "ALL") {
+        notice.classList.remove("hidden");
+        document.getElementById("filterNoticeText").textContent = ALLERGEN_MAP[filterKey]?.label || filterKey;
+      } else {
+        notice.classList.add("hidden");
+      }
+
+      renderMenu();
+    }
+
+    function applyFilters() {
+      const input = document.getElementById("searchInput");
+      searchQuery = input.value.trim().toLowerCase();
+      
+      const clearBtn = document.getElementById("clearSearchBtn");
+      if (searchQuery.length > 0) {
+        clearBtn.classList.remove("hidden");
+      } else {
+        clearBtn.classList.add("hidden");
+      }
+      renderMenu();
+    }
+
+    function clearSearch() {
+      document.getElementById("searchInput").value = "";
+      document.getElementById("clearSearchBtn").classList.add("hidden");
+      searchQuery = "";
+      renderMenu();
+    }
+
+    function clearAllFilters() {
+      clearSearch();
+      toggleAllergenFilter("ALL");
+    }
+
+    function renderMenu() {
+      const menuContainer = document.getElementById("menuContent");
+      const navContainer = document.getElementById("categoryNav");
+      menuContainer.innerHTML = "";
+      navContainer.innerHTML = "";
+
+      let totalVisibleItems = 0;
+
+      if (!RAW_MENU_DATA || !RAW_MENU_DATA.categories) return;
+
+      RAW_MENU_DATA.categories.forEach((category, catIdx) => {
+        // Filter items in category based on allergen & search
+        const filteredItems = category.items.filter(item => {
+          // Allergen filter
+          if (activeAllergenFilter !== "ALL") {
+            if (!item.allergens || !item.allergens.includes(activeAllergenFilter)) {
+              return false;
+            }
+          }
+
+          // Search query filter
+          if (searchQuery) {
+            let itemName = item.name.toLowerCase();
+            let itemDesc = (item.original_description || "").toLowerCase();
+            let cultural = (item.cultural_terms || []).join(" ").toLowerCase();
+
+            if (currentSelectedLanguage !== "Original" && item.translations && item.translations[currentSelectedLanguage]) {
+              itemName += " " + (item.translations[currentSelectedLanguage].name || "").toLowerCase();
+              itemDesc += " " + (item.translations[currentSelectedLanguage].description || "").toLowerCase();
+            }
+
+            const combined = `${itemName} ${itemDesc} ${cultural}`;
+            if (!combined.includes(searchQuery)) return false;
+          }
+
+          return true;
+        });
+
+        if (filteredItems.length === 0) return; // Skip empty category under current filters
+
+        totalVisibleItems += filteredItems.length;
+
+        // Localized category title
+        let categoryTitle = category.name;
+        if (currentSelectedLanguage !== "Original" && category.category_translations && category.category_translations[currentSelectedLanguage]) {
+          categoryTitle = category.category_translations[currentSelectedLanguage];
+        }
+
+        // Add Category Nav Link
+        const navLink = document.createElement("a");
+        navLink.href = `#cat_${catIdx}`;
+        navLink.className = "px-3 py-1 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 shrink-0 transition";
+        navLink.textContent = categoryTitle;
+        navContainer.appendChild(navLink);
+
+        // Category Section
+        const catSection = document.createElement("section");
+        catSection.id = `cat_${catIdx}`;
+        catSection.className = "scroll-mt-40 space-y-4";
+
+        catSection.innerHTML = `
+          <div class="flex items-center gap-2 pb-2 border-b border-slate-200">
+            <h2 class="text-base sm:text-lg font-bold text-slate-900 font-serif tracking-tight">${categoryTitle}</h2>
+            <span class="text-xs text-slate-400 font-medium">(${filteredItems.length})</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="catItems_${catIdx}"></div>
+        `;
+
+        menuContainer.appendChild(catSection);
+
+        // Render Dish Cards
+        const itemsBox = catSection.querySelector(`#catItems_${catIdx}`);
+        filteredItems.forEach(item => {
+          itemsBox.appendChild(createDishCard(item));
+        });
+      });
+
+      // Show or hide empty results state
+      const noResults = document.getElementById("noResultsState");
+      if (totalVisibleItems === 0) {
+        noResults.classList.remove("hidden");
+      } else {
+        noResults.classList.add("hidden");
+      }
+
+      lucide.createIcons();
+    }
+
+    function createDishCard(item) {
+      const card = document.createElement("div");
+      card.className = "bg-white rounded-2xl border border-slate-200/80 hover:border-brand-500/50 p-4 shadow-xs hover:shadow-md transition-all flex flex-col justify-between";
+
+      // Localized name & description
+      let displayName = item.name;
+      let displayDesc = item.original_description;
+
+      if (currentSelectedLanguage !== "Original" && item.translations && item.translations[currentSelectedLanguage]) {
+        const trans = item.translations[currentSelectedLanguage];
+        if (trans.name) displayName = trans.name;
+        if (trans.description) displayDesc = trans.description;
+      }
+
+      // Allergen Badges HTML
+      let badgesHtml = "";
+      if (item.allergens && item.allergens.length > 0) {
+        item.allergens.forEach(tag => {
+          const meta = ALLERGEN_MAP[tag];
+          if (meta) {
+            badgesHtml += `
+              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${meta.badgeClass}" title="${meta.label}">
+                ${tag}
+              </span>
+            `;
+          }
+        });
+      }
+
+      // Cultural Term Badge
+      let culturalBadgeHtml = "";
+      if (item.cultural_terms && item.cultural_terms.length > 0) {
+        culturalBadgeHtml = `
+          <div class="mt-1 flex flex-wrap gap-1">
+            ${item.cultural_terms.map(term => `
+              <span class="text-[10px] font-medium text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded border border-brand-200">
+                Authentic ${term}
+              </span>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      card.innerHTML = `
+        <div>
+          <div class="flex items-start justify-between gap-3">
+            <h3 class="text-sm font-bold text-slate-900 leading-snug">${displayName}</h3>
+            <span class="text-sm font-extrabold text-brand-600 shrink-0">${item.price_display || '$' + item.price.toFixed(2)}</span>
+          </div>
+          ${culturalBadgeHtml}
+          <p class="mt-2 text-xs text-slate-600 leading-relaxed">${displayDesc}</p>
+        </div>
+
+        <div class="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+          <div class="flex flex-wrap items-center gap-1">
+            ${badgesHtml || '<span class="text-[10px] text-slate-400">Standard prep</span>'}
+          </div>
+        </div>
+      `;
+
+      return card;
+    }
+
+    function shareMenu() {
+      if (navigator.share) {
+        navigator.share({
+          title: document.title,
+          url: window.location.href
+        }).catch(() => {});
+      } else {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+          alert("Menu link copied to clipboard!");
+        });
+      }
+    }
+
+    function showQrModal() {
+      const modal = document.getElementById("customerQrModal");
+      if (modal) modal.classList.remove("hidden");
+    }
+
+    function closeQrModal() {
+      const modal = document.getElementById("customerQrModal");
+      if (modal) modal.classList.add("hidden");
+    }
+  </script>
+</body>
+</html>

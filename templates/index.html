@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hyper-Local Restaurant Menu & Allergen Digitizer</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Playfair Display"', 'serif'],
+          },
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              200: '#fed7aa',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c',
+              900: '#7c2d12',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .gradient-hero {
+      background: radial-gradient(circle at 10% 20%, rgba(249, 115, 22, 0.08) 0%, rgba(255, 255, 255, 0) 60%),
+                  radial-gradient(circle at 90% 80%, rgba(99, 102, 241, 0.06) 0%, rgba(255, 255, 255, 0) 60%);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 0.3; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .pulse-glow {
+      animation: pulse-ring 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Navigation Header -->
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <i data-lucide="utensils" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <span class="font-bold text-lg tracking-tight text-slate-900 block leading-tight">HyperLocal<span class="text-brand-600">Menu</span></span>
+          <span class="text-[11px] text-slate-500 font-medium block">AI Multimodal Vision & Allergen Digitizer</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div id="aiModelBadge" class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span id="aiModelNameText">Google PaliGemma 2 / Multimodal AI</span>
+        </div>
+        <button onclick="toggleConfigDrawer()" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 bg-white text-slate-600 hover:text-slate-900 transition">
+          <i data-lucide="settings" class="w-4 h-4 text-slate-500"></i>
+          <span>AI Settings</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- AI Config Drawer / Modal -->
+  <div id="configDrawer" class="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm hidden flex justify-end transition-opacity">
+    <div class="w-full max-w-md bg-white h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
+      <div>
+        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <i data-lucide="sparkles" class="w-5 h-5 text-brand-600"></i>
+            <h3 class="font-bold text-slate-900">AI Model Configuration</h3>
+          </div>
+          <button onclick="toggleConfigDrawer()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        
+        <div class="mt-6 space-y-5 text-sm">
+          <div class="p-3.5 bg-brand-50/70 rounded-xl border border-brand-100 text-brand-900">
+            <p class="font-medium text-xs mb-1">🤖 Primary Vision Architecture</p>
+            <p class="text-xs text-brand-800 leading-relaxed">
+              Equipped for <strong>Google PaliGemma 2</strong> (DocVQA fine-tuned), Google Gemini 1.5/2.0 Flash multimodal, and OpenAI-compatible endpoints with automated culinary RAG dictionary fallback.
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Hugging Face API Key (PaliGemma 2)</label>
+            <input type="password" id="inputHfKey" placeholder="hf_xxxxxxxxxxxxxxxxxxxx" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <p class="text-[11px] text-slate-400 mt-1">Accesses google/paligemma2-10b-pt-448 via HF router.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Google AI Studio API Key (Gemini Multimodal)</label>
+            <input type="password" id="inputGoogleKey" placeholder="AIzaSyxxxxxxxxxxxxxxxxx" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <p class="text-[11px] text-slate-400 mt-1">Direct Google Gemini 1.5 Flash multimodal vision.</p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">OpenAI / OpenRouter API Key</label>
+            <input type="password" id="inputOpenAiKey" placeholder="sk-or-v1-xxxxxxxxxxxxxxxxx" class="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            <p class="text-[11px] text-slate-400 mt-1">Supports vLLM, OpenRouter or local multimodal vision servers.</p>
+          </div>
+
+          <div class="pt-2">
+            <button onclick="saveApiKeysLocally()" class="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-semibold text-xs shadow transition">
+              Save Keys in Browser Session
+            </button>
+            <button onclick="clearKeys()" class="w-full mt-2 py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg font-medium text-xs transition">
+              Reset to Autonomous Local RAG Engine
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-6 border-t border-slate-100 text-[11px] text-slate-400 text-center">
+        Zero external keys required: Local culinary RAG engine always active.
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Body Content -->
+  <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full gradient-hero">
+    
+    <!-- Hero Header -->
+    <div class="text-center max-w-3xl mx-auto mb-10">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-brand-100/60 border border-brand-200 text-brand-800 text-xs font-bold uppercase tracking-wider mb-4">
+        <i data-lucide="zap" class="w-3.5 h-3.5 text-brand-600"></i>
+        Physical-to-Digital Micro-SaaS
+      </div>
+      <h1 class="text-3xl sm:text-5xl font-extrabold text-slate-900 tracking-tight font-serif">
+        Turn Physical Menus into <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 to-amber-500">Multilingual QR Menus</span>
+      </h1>
+      <p class="mt-4 text-base sm:text-lg text-slate-600 font-normal leading-relaxed">
+        Upload a photo of your chalkboard, printed paper, or PDF. Our multimodal vision pipeline extracts dishes, preserves authentic cultural terminology, automatically tags allergens, and translates into 3 languages.
+      </p>
+    </div>
+
+    <!-- MAIN INTERACTION CONTAINER -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- LEFT COLUMN: Step 1 Upload & Configuration (lg:col-span-5) -->
+      <div id="uploadSection" class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 relative overflow-hidden transition-all duration-300">
+        
+        <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
+          <div class="flex items-center gap-2.5">
+            <span class="w-7 h-7 rounded-lg bg-brand-500 text-white font-bold text-xs flex items-center justify-center shadow-sm">1</span>
+            <h2 class="text-lg font-bold text-slate-900">Upload & Configure</h2>
+          </div>
+          <span class="text-xs text-slate-400 font-medium">Ready for scan</span>
+        </div>
+
+        <form id="menuUploadForm" onsubmit="handleFormSubmit(event)" class="space-y-5">
+          <!-- Restaurant Name -->
+          <div>
+            <label for="restaurantName" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              Restaurant Name <span class="text-brand-500">*</span>
+            </label>
+            <div class="relative">
+              <i data-lucide="store" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+              <input type="text" id="restaurantName" required placeholder="e.g. Taquería La Tradición"
+                     class="w-full text-sm pl-9 pr-4 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:outline-none transition bg-slate-50/50">
+            </div>
+          </div>
+
+          <!-- Cuisine Type (Helps RAG dictionary) -->
+          <div>
+            <label for="cuisineType" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
+              <span>Cuisine Type (Informs Local RAG Glossary)</span>
+              <span class="text-[11px] font-normal text-brand-600">Cultural context</span>
+            </label>
+            <div class="relative">
+              <i data-lucide="chef-hat" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+              <select id="cuisineType" onchange="onCuisineChanged()" class="w-full text-sm pl-9 pr-8 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:outline-none transition bg-slate-50/50 appearance-none">
+                <option value="Mexican">Mexican (Birria, Pozole, Mole, etc.)</option>
+                <option value="Ethiopian">Ethiopian (Injera, Doro Wat, Misir Wot, etc.)</option>
+                <option value="Italian">Italian (Gnocchi, Cacio e Pepe, Burrata, etc.)</option>
+                <option value="Japanese">Japanese (Tonkotsu, Ramen, Gyoza, etc.)</option>
+                <option value="Indian">Indian (Tandoori, Paneer, Biryani, etc.)</option>
+                <option value="Thai">Thai (Tom Yum, Pad Thai, Massaman, etc.)</option>
+                <option value="Vietnamese">Vietnamese (Pho, Banh Mi, Bun Cha, etc.)</option>
+                <option value="French">French (Boeuf Bourguignon, Confit, etc.)</option>
+                <option value="Middle Eastern">Middle Eastern (Shawarma, Falafel, Shakshuka, etc.)</option>
+                <option value="American">American / Diner (Smash Burger, Chowder, etc.)</option>
+              </select>
+              <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3 top-3.5 pointer-events-none"></i>
+            </div>
+          </div>
+
+          <!-- Target Languages Selector (Max 3) -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center justify-between">
+              <span>Select 3 Target Languages</span>
+              <span id="langCountBadge" class="text-[11px] font-semibold text-brand-600">3 of 3 selected</span>
+            </label>
+            <div class="grid grid-cols-3 gap-2" id="languageCheckboxes">
+              <!-- Dynamically populated or static pills -->
+              <label class="cursor-pointer">
+                <input type="checkbox" name="targetLangs" value="Spanish" checked onchange="validateLangCount(this)" class="peer sr-only">
+                <div class="p-2 text-center text-xs font-semibold rounded-lg border border-slate-200 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition">
+                  🇪🇸 Spanish
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="checkbox" name="targetLangs" value="French" checked onchange="validateLangCount(this)" class="peer sr-only">
+                <div class="p-2 text-center text-xs font-semibold rounded-lg border border-slate-200 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition">
+                  🇫🇷 French
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="checkbox" name="targetLangs" value="Mandarin" checked onchange="validateLangCount(this)" class="peer sr-only">
+                <div class="p-2 text-center text-xs font-semibold rounded-lg border border-slate-200 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition">
+                  🇨🇳 Mandarin
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="checkbox" name="targetLangs" value="Japanese" onchange="validateLangCount(this)" class="peer sr-only">
+                <div class="p-2 text-center text-xs font-semibold rounded-lg border border-slate-200 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition">
+                  🇯🇵 Japanese
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="checkbox" name="targetLangs" value="German" onchange="validateLangCount(this)" class="peer sr-only">
+                <div class="p-2 text-center text-xs font-semibold rounded-lg border border-slate-200 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition">
+                  🇩🇪 German
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="checkbox" name="targetLangs" value="Italian" onchange="validateLangCount(this)" class="peer sr-only">
+                <div class="p-2 text-center text-xs font-semibold rounded-lg border border-slate-200 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition">
+                  🇮🇹 Italian
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="checkbox" name="targetLangs" value="Korean" onchange="validateLangCount(this)" class="peer sr-only">
+                <div class="p-2 text-center text-xs font-semibold rounded-lg border border-slate-200 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition">
+                  🇰🇷 Korean
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="checkbox" name="targetLangs" value="Arabic" onchange="validateLangCount(this)" class="peer sr-only">
+                <div class="p-2 text-center text-xs font-semibold rounded-lg border border-slate-200 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition">
+                  🇸🇦 Arabic
+                </div>
+              </label>
+              <label class="cursor-pointer">
+                <input type="checkbox" name="targetLangs" value="Portuguese" onchange="validateLangCount(this)" class="peer sr-only">
+                <div class="p-2 text-center text-xs font-semibold rounded-lg border border-slate-200 peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 transition">
+                  🇵🇹 Portuguese
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Drag and Drop Zone -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+              Menu Photo, Chalkboard, or PDF
+            </label>
+            <div id="dropZone" 
+                 ondragover="handleDragOver(event)" 
+                 ondragleave="handleDragLeave(event)" 
+                 ondrop="handleFileDrop(event)"
+                 onclick="document.getElementById('fileInput').click()"
+                 class="border-2 border-dashed border-slate-300 hover:border-brand-500 bg-slate-50/70 hover:bg-brand-50/20 rounded-2xl p-6 text-center cursor-pointer transition flex flex-col items-center justify-center min-h-[170px] relative group">
+              <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,application/pdf" class="hidden" onchange="handleFileSelected(this.files[0])">
+              
+              <div id="dropPrompt" class="flex flex-col items-center">
+                <div class="w-12 h-12 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mb-3 group-hover:scale-110 transition">
+                  <i data-lucide="camera" class="w-6 h-6"></i>
+                </div>
+                <p class="text-sm font-semibold text-slate-800">
+                  Drag & drop menu photo or <span class="text-brand-600 underline">browse</span>
+                </p>
+                <p class="text-xs text-slate-400 mt-1">Supports JPG, PNG, WEBP, or PDF (up to 15MB)</p>
+              </div>
+
+              <!-- Preview State -->
+              <div id="previewContainer" class="hidden w-full flex flex-col items-center">
+                <img id="imagePreview" src="#" alt="Menu Preview" class="max-h-36 rounded-lg shadow-sm border border-slate-200 mb-2 object-cover">
+                <div id="pdfPreview" class="hidden flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-xs font-semibold">
+                  <i data-lucide="file-text" class="w-5 h-5"></i>
+                  <span id="pdfFileName">menu.pdf</span>
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                  <span id="fileNameDisplay" class="text-xs font-medium text-slate-600 truncate max-w-[200px]"></span>
+                  <button type="button" onclick="event.stopPropagation(); clearSelectedFile();" class="text-xs text-red-600 hover:underline">Change</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" id="processBtn" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-brand-600 to-amber-600 hover:from-brand-700 hover:to-amber-700 text-white font-bold text-sm shadow-md shadow-brand-500/25 transition transform active:scale-[0.98] flex items-center justify-center gap-2">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span>Digitize Menu with Multimodal Vision</span>
+          </button>
+        </form>
+
+        <!-- Divider with 1-Click Samples -->
+        <div class="relative my-6">
+          <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+          <div class="relative flex justify-center text-xs uppercase"><span class="bg-white px-2 text-slate-400 font-semibold">Or Try Instant Preset</span></div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="loadSample('mexican')" class="p-2.5 text-left border border-slate-200 hover:border-brand-500 hover:bg-brand-50/30 rounded-xl transition group">
+            <span class="block text-xs font-bold text-slate-800 group-hover:text-brand-600">🌮 Taquería La Tradición</span>
+            <span class="block text-[11px] text-slate-500">Mexican • Birria & Pastor</span>
+          </button>
+          <button onclick="loadSample('ethiopian')" class="p-2.5 text-left border border-slate-200 hover:border-brand-500 hover:bg-brand-50/30 rounded-xl transition group">
+            <span class="block text-xs font-bold text-slate-800 group-hover:text-brand-600">🥘 Lalibela Kitchen</span>
+            <span class="block text-[11px] text-slate-500">Ethiopian • Doro Wat & Injera</span>
+          </button>
+          <button onclick="loadSample('italian')" class="p-2.5 text-left border border-slate-200 hover:border-brand-500 hover:bg-brand-50/30 rounded-xl transition group">
+            <span class="block text-xs font-bold text-slate-800 group-hover:text-brand-600">🍝 Trattoria del Vicolo</span>
+            <span class="block text-[11px] text-slate-500">Italian • Gnocchi & Cacio</span>
+          </button>
+          <button onclick="loadSample('japanese')" class="p-2.5 text-left border border-slate-200 hover:border-brand-500 hover:bg-brand-50/30 rounded-xl transition group">
+            <span class="block text-xs font-bold text-slate-800 group-hover:text-brand-600">🍜 Sakura Izakaya</span>
+            <span class="block text-[11px] text-slate-500">Japanese • Tonkotsu & Gyoza</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Step 2 & 3 Interactive Review, Editing & Live QR Publishing (lg:col-span-7) -->
+      <div id="editorSection" class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-7 relative transition-all duration-300">
+        
+        <!-- Placeholder Empty State -->
+        <div id="editorEmptyState" class="py-16 text-center flex flex-col items-center justify-center">
+          <div class="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center mb-4">
+            <i data-lucide="layout-grid" class="w-8 h-8"></i>
+          </div>
+          <h3 class="text-base font-bold text-slate-800">No Menu Loaded Yet</h3>
+          <p class="text-sm text-slate-500 max-w-sm mt-1">
+            Upload a physical menu photo on the left or click a 1-click preset to see the parsed dishes, allergen tags, and multilingual translations.
+          </p>
+        </div>
+
+        <!-- Processing Progress Overlay -->
+        <div id="processingLoader" class="hidden py-12 flex flex-col items-center justify-center text-center">
+          <div class="relative w-16 h-16 mb-5">
+            <div class="absolute inset-0 rounded-full border-4 border-brand-200 border-t-brand-600 animate-spin"></div>
+            <div class="absolute inset-2 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
+              <i data-lucide="scan" class="w-6 h-6 animate-pulse"></i>
+            </div>
+          </div>
+          <h3 id="loaderTitle" class="text-lg font-bold text-slate-900">Executing Multimodal Vision Pipeline</h3>
+          <p id="loaderSubtitle" class="text-xs text-slate-500 mt-1 max-w-md">
+            Scanning visual layout, recognizing dishes, extracting prices, and preserving authentic culinary terminology...
+          </p>
+
+          <!-- Step Progression Checklist -->
+          <div class="mt-6 w-full max-w-sm space-y-2 text-left text-xs bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div id="step1" class="flex items-center gap-2 text-slate-400">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+              <span>1. Multimodal OCR & Category Recognition</span>
+            </div>
+            <div id="step2" class="flex items-center gap-2 text-slate-400">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+              <span>2. Local Cultural RAG Glossary Context</span>
+            </div>
+            <div id="step3" class="flex items-center gap-2 text-slate-400">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+              <span>3. Allergen & Dietary Tag Inference</span>
+            </div>
+            <div id="step4" class="flex items-center gap-2 text-slate-400">
+              <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+              <span>4. Multilingual 3-Language Translation</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Interactive Editor Container -->
+        <div id="editorContent" class="hidden space-y-6">
+          
+          <!-- Header Bar with Stats & Publish Action -->
+          <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shadow-sm">2</span>
+                <h2 id="editorRestaurantTitle" class="text-xl font-bold text-slate-900">Restaurant Menu</h2>
+              </div>
+              <p id="editorSubtitle" class="text-xs text-slate-500 mt-0.5">
+                Review extracted items, toggle allergens, adjust prices, and publish.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="saveMenuDraft()" class="px-3.5 py-2 text-xs font-bold rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 transition flex items-center gap-1.5">
+                <i data-lucide="save" class="w-4 h-4 text-slate-500"></i>
+                <span>Save Draft</span>
+              </button>
+              <button onclick="publishMenu()" class="px-4 py-2 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5">
+                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                <span>Publish & Get QR</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Target Language Review Pill Tabs -->
+          <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <span class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+              <i data-lucide="languages" class="w-4 h-4 text-brand-600"></i>
+              Editing Language:
+            </span>
+            <div id="editorLanguageTabs" class="flex gap-1.5">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Categories and Items Container -->
+          <div id="categoriesList" class="space-y-6 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+            <!-- Dynamically populated category cards and items -->
+          </div>
+
+          <!-- Add Category Button -->
+          <div class="pt-2">
+            <button onclick="addNewCategory()" class="w-full py-2.5 border-2 border-dashed border-slate-300 hover:border-brand-500 hover:bg-brand-50/20 text-slate-600 hover:text-brand-700 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>Add New Menu Category</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- PUBLISHED QR CODE MODAL DIALOG -->
+    <div id="publishModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-slate-100 text-center relative animate-in fade-in zoom-in-95 duration-200">
+        
+        <button onclick="closePublishModal()" class="absolute right-4 top-4 text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+
+        <div class="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="check-check" class="w-8 h-8"></i>
+        </div>
+
+        <h3 class="text-2xl font-bold text-slate-900 font-serif">Menu Successfully Published!</h3>
+        <p class="text-xs text-slate-500 mt-1">
+          Your hyper-local, multilingual digital QR menu is live and ready for diners.
+        </p>
+
+        <!-- QR Code Display Box -->
+        <div class="my-6 p-4 bg-slate-50 border border-slate-200 rounded-2xl inline-block shadow-inner">
+          <img id="modalQrImage" src="" alt="Menu QR Code" class="w-48 h-48 mx-auto rounded-xl shadow-sm border border-slate-200">
+          <p class="text-[11px] text-slate-400 mt-2 font-medium">Scan with camera to preview on mobile</p>
+        </div>
+
+        <!-- Public URL Link Box -->
+        <div class="mb-5 flex items-center justify-between p-2.5 bg-slate-100 rounded-xl border border-slate-200 text-xs">
+          <span id="modalPublicUrlText" class="truncate font-mono text-slate-700 text-[11px] pr-2"></span>
+          <button onclick="copyPublicUrl()" class="px-3 py-1 bg-white hover:bg-slate-50 text-slate-800 font-bold rounded-lg border border-slate-200 shadow-sm transition shrink-0 flex items-center gap-1">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            <span id="copyBtnText">Copy</span>
+          </button>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-2 gap-3">
+          <a id="modalDownloadQrBtn" href="#" class="py-2.5 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            <span>Download PNG</span>
+          </a>
+          <a id="modalViewMenuBtn" href="#" target="_blank" class="py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 shadow shadow-brand-600/25">
+            <i data-lucide="external-link" class="w-4 h-4"></i>
+            <span>View Public Menu</span>
+          </a>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600"></i>
+        <span>Built with Google Gemma & PaliGemma Multimodal Architecture</span>
+      </div>
+      <div>
+        <span>Hyper-Local Restaurant Menu & Allergen Digitizer © 2026</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic JavaScript -->
+  <script>
+    // Global Application State
+    let currentMenuId = null;
+    let currentMenuData = null;
+    let currentRestaurantName = "";
+    let currentCuisineType = "Mexican";
+    let currentTargetLanguages = ["Spanish", "French", "Mandarin"];
+    let currentActiveLanguageTab = "Original"; // 'Original' or language name
+    let selectedFile = null;
+
+    // Allergen metadata
+    const ALLERGEN_MAP = {
+      'GF': { label: 'Gluten-Free', badgeClass: 'bg-amber-100 text-amber-800 border-amber-300' },
+      'NF': { label: 'Nut-Free', badgeClass: 'bg-purple-100 text-purple-800 border-purple-300' },
+      'DF': { label: 'Dairy-Free', badgeClass: 'bg-blue-100 text-blue-800 border-blue-300' },
+      'VG': { label: 'Vegan', badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+      'V':  { label: 'Vegetarian', badgeClass: 'bg-lime-100 text-lime-800 border-lime-300' }
+    };
+
+    // On Load Initialization
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      checkBackendHealth();
+
+      // Check if URL has existing menu id
+      const pathParts = window.location.pathname.split('/');
+      if (pathParts.includes('dashboard') && pathParts[pathParts.length - 1]) {
+        const id = pathParts[pathParts.length - 1];
+        if (id && id !== 'dashboard') {
+          loadExistingMenu(id);
+        }
+      }
+    });
+
+    async function checkBackendHealth() {
+      try {
+        const res = await fetch("/api/health");
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById("aiModelNameText").textContent = data.active_model_pipeline;
+        }
+      } catch (e) {
+        console.warn("Backend health check failed:", e);
+      }
+    }
+
+    // Language checkboxes constraint (Max 3)
+    function validateLangCount(checkbox) {
+      const checkedBoxes = document.querySelectorAll('input[name="targetLangs"]:checked');
+      if (checkedBoxes.length > 3) {
+        checkbox.checked = false;
+        alert("Please select a maximum of 3 target languages for translation.");
+      }
+      const count = document.querySelectorAll('input[name="targetLangs"]:checked').length;
+      document.getElementById("langCountBadge").textContent = `${count} of 3 selected`;
+    }
+
+    // Cuisine changes suggestion
+    function onCuisineChanged() {
+      const cuisine = document.getElementById("cuisineType").value;
+      const restNameInput = document.getElementById("restaurantName");
+      if (!restNameInput.value) {
+        if (cuisine === "Mexican") restNameInput.value = "Taquería La Tradición";
+        else if (cuisine === "Ethiopian") restNameInput.value = "Lalibela Kitchen";
+        else if (cuisine === "Italian") restNameInput.value = "Trattoria del Vicolo";
+        else if (cuisine === "Japanese") restNameInput.value = "Sakura Izakaya";
+        else if (cuisine === "Indian") restNameInput.value = "Bombay Spice & Tandoor";
+      }
+    }
+
+    // Drag and Drop Handling
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById("dropZone").classList.add("border-brand-500", "bg-brand-50/40");
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById("dropZone").classList.remove("border-brand-500", "bg-brand-50/40");
+    }
+
+    function handleFileDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      document.getElementById("dropZone").classList.remove("border-brand-500", "bg-brand-50/40");
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleFileSelected(e.dataTransfer.files[0]);
+      }
+    }
+
+    function handleFileSelected(file) {
+      if (!file) return;
+      selectedFile = file;
+
+      document.getElementById("dropPrompt").classList.add("hidden");
+      document.getElementById("previewContainer").classList.remove("hidden");
+      document.getElementById("fileNameDisplay").textContent = file.name;
+
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          document.getElementById("imagePreview").src = e.target.result;
+          document.getElementById("imagePreview").classList.remove("hidden");
+          document.getElementById("pdfPreview").classList.add("hidden");
+        };
+        reader.readAsDataURL(file);
+      } else {
+        document.getElementById("imagePreview").classList.add("hidden");
+        document.getElementById("pdfPreview").classList.remove("hidden");
+        document.getElementById("pdfFileName").textContent = file.name;
+      }
+      lucide.createIcons();
+    }
+
+    function clearSelectedFile() {
+      selectedFile = null;
+      document.getElementById("fileInput").value = "";
+      document.getElementById("previewContainer").classList.add("hidden");
+      document.getElementById("dropPrompt").classList.remove("hidden");
+    }
+
+    // Load Pre-configured Sample Instantly
+    async function loadSample(sampleKey) {
+      showProcessingLoader("Loading Preset Culinary Menu & RAG Context...");
+      try {
+        const checkedLangs = Array.from(document.querySelectorAll('input[name="targetLangs"]:checked')).map(c => c.value);
+        const langs = checkedLangs.length > 0 ? checkedLangs.join(",") : "Spanish,French,Mandarin";
+
+        const formData = new FormData();
+        formData.append("sample_key", sampleKey);
+        formData.append("target_languages", langs);
+
+        const res = await fetch("/api/process-menu", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!res.ok) throw new Error("Failed to process sample");
+        const data = await res.json();
+        populateEditorWithData(data);
+      } catch (err) {
+        alert("Error loading sample: " + err.message);
+        hideProcessingLoader();
+      }
+    }
+
+    // Submit Custom Form for Multimodal Parsing
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+      
+      const restName = document.getElementById("restaurantName").value.trim();
+      const cuisine = document.getElementById("cuisineType").value;
+      const checkedLangs = Array.from(document.querySelectorAll('input[name="targetLangs"]:checked')).map(c => c.value);
+      if (checkedLangs.length === 0) {
+        alert("Please select at least 1 target language.");
+        return;
+      }
+
+      showProcessingLoader("Analyzing Visual Layout & Reading Handwriting...");
+
+      try {
+        const formData = new FormData();
+        formData.append("restaurant_name", restName);
+        formData.append("cuisine_type", cuisine);
+        formData.append("target_languages", checkedLangs.join(","));
+
+        if (selectedFile) {
+          formData.append("file", selectedFile);
+        } else {
+          // If user didn't upload a file, infer sample based on cuisine
+          formData.append("sample_key", cuisine.toLowerCase());
+        }
+
+        const res = await fetch("/api/process-menu", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!res.ok) throw new Error("Processing failed");
+        const data = await res.json();
+        populateEditorWithData(data);
+      } catch (err) {
+        alert("Error processing menu: " + err.message);
+        hideProcessingLoader();
+      }
+    }
+
+    function showProcessingLoader(message) {
+      document.getElementById("editorEmptyState").classList.add("hidden");
+      document.getElementById("editorContent").classList.add("hidden");
+      document.getElementById("processingLoader").classList.remove("hidden");
+      document.getElementById("loaderTitle").textContent = message;
+
+      // Animate progress checklist steps
+      setTimeout(() => document.getElementById("step1").classList.replace("text-slate-400", "text-slate-900"), 400);
+      setTimeout(() => document.getElementById("step2").classList.replace("text-slate-400", "text-slate-900"), 800);
+      setTimeout(() => document.getElementById("step3").classList.replace("text-slate-400", "text-slate-900"), 1200);
+      setTimeout(() => document.getElementById("step4").classList.replace("text-slate-400", "text-slate-900"), 1600);
+    }
+
+    function hideProcessingLoader() {
+      document.getElementById("processingLoader").classList.add("hidden");
+    }
+
+    // Populate Editor with Resulting Data
+    function populateEditorWithData(data) {
+      hideProcessingLoader();
+      currentMenuId = data.menu_id;
+      currentMenuData = data.menu_data;
+      currentRestaurantName = data.restaurant_name;
+      currentCuisineType = data.cuisine_type;
+      currentTargetLanguages = data.target_languages || ["Spanish", "French", "Mandarin"];
+      currentActiveLanguageTab = "Original";
+
+      document.getElementById("editorRestaurantTitle").textContent = currentRestaurantName;
+      document.getElementById("editorSubtitle").textContent = `${currentCuisineType} Cuisine • Parsed via ${data.ai_model_used}`;
+
+      // Update URL without page reload for easy refresh
+      window.history.pushState({}, "", `/dashboard/${currentMenuId}`);
+
+      renderLanguageTabs();
+      renderCategoriesList();
+
+      document.getElementById("editorContent").classList.remove("hidden");
+      lucide.createIcons();
+    }
+
+    async function loadExistingMenu(menuId) {
+      showProcessingLoader("Loading Saved Menu...");
+      try {
+        const res = await fetch(`/api/menu/${menuId}`);
+        if (!res.ok) throw new Error("Menu not found");
+        const data = await res.json();
+        populateEditorWithData({
+          menu_id: data.menu_id,
+          restaurant_name: data.restaurant_name,
+          cuisine_type: data.cuisine_type,
+          target_languages: data.target_languages,
+          menu_data: data.menu_data,
+          ai_model_used: "Saved SQLite Database"
+        });
+      } catch (err) {
+        hideProcessingLoader();
+        document.getElementById("editorEmptyState").classList.remove("hidden");
+      }
+    }
+
+    // Render Language Tabs in Editor
+    function renderLanguageTabs() {
+      const container = document.getElementById("editorLanguageTabs");
+      container.innerHTML = "";
+
+      const allTabs = ["Original", ...currentTargetLanguages];
+      allTabs.forEach(tab => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        const isActive = (tab === currentActiveLanguageTab);
+        btn.className = `px-3 py-1 rounded-lg text-xs font-bold transition ${
+          isActive 
+            ? 'bg-slate-900 text-white shadow-sm' 
+            : 'bg-white text-slate-600 hover:text-slate-900 border border-slate-200'
+        }`;
+        btn.textContent = tab;
+        btn.onclick = () => {
+          currentActiveLanguageTab = tab;
+          renderLanguageTabs();
+          renderCategoriesList();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    // Render Categories & Items
+    function renderCategoriesList() {
+      const container = document.getElementById("categoriesList");
+      container.innerHTML = "";
+
+      if (!currentMenuData || !currentMenuData.categories || currentMenuData.categories.length === 0) {
+        container.innerHTML = `<p class="text-sm text-slate-500 py-4 text-center">No categories yet. Click "Add Category" below.</p>`;
+        return;
+      }
+
+      currentMenuData.categories.forEach((category, catIndex) => {
+        const catCard = document.createElement("div");
+        catCard.className = "bg-slate-50/80 rounded-2xl border border-slate-200 p-4.5 space-y-4";
+
+        // Display category name based on active language tab
+        let catTitle = category.name;
+        if (currentActiveLanguageTab !== "Original" && category.category_translations && category.category_translations[currentActiveLanguageTab]) {
+          catTitle = `${category.name} (${category.category_translations[currentActiveLanguageTab]})`;
+        }
+
+        catCard.innerHTML = `
+          <div class="flex items-center justify-between pb-2 border-b border-slate-200/80">
+            <div class="flex items-center gap-2">
+              <i data-lucide="folder" class="w-4 h-4 text-brand-600"></i>
+              <input type="text" value="${category.name}" onchange="updateCategoryName(${catIndex}, this.value)"
+                     class="text-sm font-bold text-slate-900 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-brand-500 focus:outline-none px-1">
+            </div>
+            <button onclick="deleteCategory(${catIndex})" class="text-xs text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition" title="Delete category">
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <div class="space-y-3" id="itemsContainer_${catIndex}"></div>
+          <button onclick="addNewItem(${catIndex})" class="w-full py-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 bg-white hover:bg-brand-50/40 border border-brand-200 rounded-lg transition flex items-center justify-center gap-1.5">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Add Item to ${category.name}</span>
+          </button>
+        `;
+
+        container.appendChild(catCard);
+
+        // Render items inside this category
+        const itemsBox = catCard.querySelector(`#itemsContainer_${catIndex}`);
+        category.items.forEach((item, itemIndex) => {
+          itemsBox.appendChild(createItemElement(item, catIndex, itemIndex));
+        });
+      });
+
+      lucide.createIcons();
+    }
+
+    // Create Individual Editable Item Element
+    function createItemElement(item, catIndex, itemIndex) {
+      const el = document.createElement("div");
+      el.className = "bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2.5 transition hover:border-slate-300";
+
+      // Current language view values
+      let itemName = item.name;
+      let itemDesc = item.original_description;
+
+      if (currentActiveLanguageTab !== "Original" && item.translations && item.translations[currentActiveLanguageTab]) {
+        itemName = item.translations[currentActiveLanguageTab].name || item.name;
+        itemDesc = item.translations[currentActiveLanguageTab].description || item.original_description;
+      }
+
+      // Allergen toggle pills
+      let allergenPillsHtml = "";
+      Object.keys(ALLERGEN_MAP).forEach(tag => {
+        const isActive = item.allergens && item.allergens.includes(tag);
+        const meta = ALLERGEN_MAP[tag];
+        allergenPillsHtml += `
+          <button type="button" onclick="toggleAllergenTag(${catIndex}, ${itemIndex}, '${tag}')" 
+                  class="px-2 py-0.5 rounded text-[10px] font-bold border transition ${
+                    isActive ? meta.badgeClass : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-slate-600'
+                  }">
+            ${tag}
+          </button>
+        `;
+      });
+
+      el.innerHTML = `
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <input type="text" value="${itemName}" onchange="updateItemName(${catIndex}, ${itemIndex}, this.value)"
+                     class="w-full text-xs font-bold text-slate-900 border border-slate-200 rounded px-2 py-1 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+              <div class="w-24 shrink-0 flex items-center">
+                <span class="text-xs font-bold text-slate-500 mr-1">$</span>
+                <input type="number" step="0.5" value="${item.price}" onchange="updateItemPrice(${catIndex}, ${itemIndex}, this.value)"
+                       class="w-full text-xs font-bold text-slate-900 border border-slate-200 rounded px-2 py-1 focus:ring-1 focus:ring-brand-500 focus:outline-none">
+              </div>
+            </div>
+            <textarea rows="2" onchange="updateItemDescription(${catIndex}, ${itemIndex}, this.value)"
+                      class="w-full mt-1.5 text-xs text-slate-600 border border-slate-200 rounded px-2 py-1 focus:ring-1 focus:ring-brand-500 focus:outline-none resize-none">${itemDesc}</textarea>
+          </div>
+          <button onclick="deleteItem(${catIndex}, ${itemIndex})" class="text-slate-400 hover:text-red-500 p-1" title="Delete dish">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-100 text-[11px]">
+          <div class="flex items-center gap-1.5">
+            <span class="text-slate-400 font-medium">Allergen Badges:</span>
+            <div class="flex gap-1">${allergenPillsHtml}</div>
+          </div>
+          ${item.cultural_terms && item.cultural_terms.length > 0 ? `
+            <div class="flex items-center gap-1">
+              <span class="text-brand-600 font-semibold">Cultural Term:</span>
+              <span class="bg-brand-50 text-brand-700 font-mono text-[10px] px-1.5 py-0.5 rounded border border-brand-200">${item.cultural_terms.join(', ')}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      return el;
+    }
+
+    // Editor Update Mutations
+    function updateCategoryName(catIndex, val) {
+      currentMenuData.categories[catIndex].name = val;
+    }
+
+    function updateItemName(catIndex, itemIndex, val) {
+      const item = currentMenuData.categories[catIndex].items[itemIndex];
+      if (currentActiveLanguageTab === "Original") {
+        item.name = val;
+      } else {
+        if (!item.translations) item.translations = {};
+        if (!item.translations[currentActiveLanguageTab]) item.translations[currentActiveLanguageTab] = { name: val, description: item.original_description };
+        item.translations[currentActiveLanguageTab].name = val;
+      }
+    }
+
+    function updateItemPrice(catIndex, itemIndex, val) {
+      const p = parseFloat(val) || 0;
+      const item = currentMenuData.categories[catIndex].items[itemIndex];
+      item.price = p;
+      item.price_display = `$${p.toFixed(2)}`;
+    }
+
+    function updateItemDescription(catIndex, itemIndex, val) {
+      const item = currentMenuData.categories[catIndex].items[itemIndex];
+      if (currentActiveLanguageTab === "Original") {
+        item.original_description = val;
+      } else {
+        if (!item.translations) item.translations = {};
+        if (!item.translations[currentActiveLanguageTab]) item.translations[currentActiveLanguageTab] = { name: item.name, description: val };
+        item.translations[currentActiveLanguageTab].description = val;
+      }
+    }
+
+    function toggleAllergenTag(catIndex, itemIndex, tag) {
+      const item = currentMenuData.categories[catIndex].items[itemIndex];
+      if (!item.allergens) item.allergens = [];
+      const idx = item.allergens.indexOf(tag);
+      if (idx > -1) {
+        item.allergens.splice(idx, 1);
+      } else {
+        item.allergens.push(tag);
+      }
+      renderCategoriesList();
+    }
+
+    function addNewCategory() {
+      const name = prompt("Enter category name (e.g. Appetizers, Mains, Drinks, Desserts):");
+      if (!name) return;
+      currentMenuData.categories.push({
+        id: Math.random().toString(36).substring(2, 9),
+        name: name,
+        category_translations: {},
+        items: []
+      });
+      renderCategoriesList();
+    }
+
+    function deleteCategory(catIndex) {
+      if (confirm(`Delete category "${currentMenuData.categories[catIndex].name}" and all its items?`)) {
+        currentMenuData.categories.splice(catIndex, 1);
+        renderCategoriesList();
+      }
+    }
+
+    function addNewItem(catIndex) {
+      const name = prompt("Enter new item name:");
+      if (!name) return;
+      currentMenuData.categories[catIndex].items.push({
+        id: Math.random().toString(36).substring(2, 9),
+        name: name,
+        price: 12.00,
+        price_display: "$12.00",
+        original_description: "Freshly prepared with authentic seasonal ingredients.",
+        cultural_terms: [],
+        allergens: ["GF", "NF"],
+        translations: {}
+      });
+      renderCategoriesList();
+    }
+
+    function deleteItem(catIndex, itemIndex) {
+      currentMenuData.categories[catIndex].items.splice(itemIndex, 1);
+      renderCategoriesList();
+    }
+
+    // Save Draft to SQLite
+    async function saveMenuDraft() {
+      if (!currentMenuId) return;
+      try {
+        const res = await fetch(`/api/menu/${currentMenuId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            restaurant_name: currentRestaurantName,
+            cuisine_type: currentCuisineType,
+            target_languages: currentTargetLanguages,
+            menu_data: currentMenuData
+          })
+        });
+        if (res.ok) {
+          alert("Menu draft saved successfully!");
+        }
+      } catch (e) {
+        alert("Failed to save draft: " + e.message);
+      }
+    }
+
+    // Step 3: Publish Menu & Generate QR Code
+    async function publishMenu() {
+      if (!currentMenuId) return;
+      try {
+        // Save first
+        await fetch(`/api/menu/${currentMenuId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            restaurant_name: currentRestaurantName,
+            cuisine_type: currentCuisineType,
+            target_languages: currentTargetLanguages,
+            menu_data: currentMenuData
+          })
+        });
+
+        const res = await fetch(`/api/menu/${currentMenuId}/publish`, {
+          method: "POST"
+        });
+
+        if (!res.ok) throw new Error("Publishing failed");
+        const data = await res.json();
+
+        // Populate Modal
+        document.getElementById("modalQrImage").src = data.qr_code_base64;
+        document.getElementById("modalPublicUrlText").textContent = data.public_url;
+        document.getElementById("modalDownloadQrBtn").href = `/api/menu/${currentMenuId}/qr`;
+        document.getElementById("modalViewMenuBtn").href = data.public_url;
+
+        document.getElementById("publishModal").classList.remove("hidden");
+        lucide.createIcons();
+      } catch (err) {
+        alert("Error publishing menu: " + err.message);
+      }
+    }
+
+    function closePublishModal() {
+      document.getElementById("publishModal").classList.add("hidden");
+    }
+
+    function copyPublicUrl() {
+      const url = document.getElementById("modalPublicUrlText").textContent;
+      navigator.clipboard.writeText(url).then(() => {
+        const btnText = document.getElementById("copyBtnText");
+        btnText.textContent = "Copied!";
+        setTimeout(() => btnText.textContent = "Copy", 2000);
+      });
+    }
+
+    // Config Drawer
+    function toggleConfigDrawer() {
+      const drawer = document.getElementById("configDrawer");
+      drawer.classList.toggle("hidden");
+      lucide.createIcons();
+    }
+
+    function saveApiKeysLocally() {
+      const hf = document.getElementById("inputHfKey").value.trim();
+      const google = document.getElementById("inputGoogleKey").value.trim();
+      const openai = document.getElementById("inputOpenAiKey").value.trim();
+
+      if (hf) sessionStorage.setItem("hf_key", hf);
+      if (google) sessionStorage.setItem("google_key", google);
+      if (openai) sessionStorage.setItem("openai_key", openai);
+
+      alert("API keys saved for this browser session!");
+      toggleConfigDrawer();
+    }
+
+    function clearKeys() {
+      sessionStorage.clear();
+      document.getElementById("inputHfKey").value = "";
+      document.getElementById("inputGoogleKey").value = "";
+      document.getElementById("inputOpenAiKey").value = "";
+      alert("Reset to Autonomous Local RAG Engine.");
+      toggleConfigDrawer();
+    }
+  </script>
+</body>
+</html>
